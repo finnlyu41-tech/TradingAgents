@@ -33,6 +33,10 @@ def create_llm_client(
     # Native (non-OpenAI) APIs are matched first so their string check doesn't
     # import the OpenAI client. Everything else is OpenAI-compatible and routes
     # through the provider registry (single source of truth).
+    if provider_lower == "codex_cli":
+        from .codex_cli_client import CodexCLIClient
+        return CodexCLIClient(model, base_url, **kwargs)
+
     if provider_lower == "anthropic":
         from .anthropic_client import AnthropicClient
         return AnthropicClient(model, base_url, **kwargs)
@@ -91,6 +95,16 @@ def build_llm_kwargs(config: dict) -> dict[str, Any]:
     """Keyword arguments for ``create_llm_client`` from a TradingAgents config."""
     kwargs = {}
     provider = config.get("llm_provider", "").lower()
+
+    if provider == "codex_cli":
+        for key in ("temperature", "max_tokens", "llm_max_retries"):
+            if config.get(key) not in (None, ""):
+                raise ValueError(f"codex_cli does not support {key}; clear the API-only setting.")
+        return {
+            "command": config.get("codex_command", "codex"),
+            "timeout": config.get("codex_timeout", 300),
+            "reasoning_effort": config.get("codex_reasoning_effort", "medium"),
+        }
 
     if provider == "google":
         thinking_level = config.get("google_thinking_level")

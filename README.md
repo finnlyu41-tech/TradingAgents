@@ -196,6 +196,15 @@ Alternatively, copy `.env.example` to `.env` and fill in your keys:
 cp .env.example .env
 ```
 
+### Codex CLI subscription backend (experimental, this fork)
+
+Use the official Codex CLI with an existing ChatGPT login instead of an API key.
+Set `TRADINGAGENTS_LLM_PROVIDER=codex_cli`; the complete, credential-free example
+is in `.env.codex.example`. Both model tiers, host tool calls and the existing
+Pydantic decision schemas are supported. No proxy server or API fallback is added.
+See [setup, safety boundaries and validation status](docs/codex-cli.md).
+Subscription limits still apply; live model generation has not yet been verified.
+
 ### CLI Usage
 
 Launch the interactive CLI:

@@ -22,6 +22,10 @@ def normalize_content(response):
     return response
 
 
+class NonRetryableLLMError(RuntimeError):
+    """A backend failure that must not trigger another generation or fallback."""
+
+
 class BaseLLMClient(ABC):
     """Abstract base class for LLM clients."""
 

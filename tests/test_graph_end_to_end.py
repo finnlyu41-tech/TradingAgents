@@ -387,3 +387,50 @@ def test_the_memory_step_reads_lessons_as_of_the_trade_date_and_settles_once(tmp
 
     assert asked == ["2026-01-20", "2026-01-20"]
     assert (tmp_path / "log.md").read_text() == log_after_first
+
+
+@pytest.mark.unit
+def test_codex_transport_full_graph_offline(tmp_path, monkeypatch, offline):
+    """Real Codex adapter + real graph; only CLI generation and vendors scripted."""
+    import json
+
+    from tradingagents.llm_clients.codex_cli_client import CodexCLIChatModel
+
+    calls = []
+    by_title = {schema.__name__: value.model_dump(mode="json")
+                for schema, value in STRUCTURED.items()}
+
+    def run_codex(self, prompt, schema):
+        calls.append(schema.get("title"))
+        if schema.get("title") in by_title:
+            return by_title[schema["title"]], None
+        payload = json.loads(prompt.split("\n\n", 1)[1])
+        tools = payload["available_tools"]
+        messages = payload["conversation"]
+        if tools and messages[-1]["role"] != "tool":
+            requests = []
+            for t in tools:
+                fn = t["function"]
+                args = {k: v for k, v in ARGS.items() if k in fn["parameters"]["properties"]}
+                requests.append({"name": fn["name"], "arguments": json.dumps(args)})
+            return {"content": "", "tool_calls": requests}, None
+        return {"content": TEXT, "tool_calls": []}, None
+
+    monkeypatch.setattr(CodexCLIChatModel, "_run_codex", run_codex)
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    cfg = copy.deepcopy(DEFAULT_CONFIG)
+    cfg.update(llm_provider="codex_cli", quick_think_llm="codex-default",
+               deep_think_llm="codex-default", quick_think_provider=None,
+               deep_think_provider=None, backend_url=None, temperature=None,
+               max_tokens=None, llm_max_retries=None,
+               results_dir=str(tmp_path / "results"), data_cache_dir=str(tmp_path / "cache"),
+               memory_log_path=str(tmp_path / "memory.md"))
+    graph = trading_graph.TradingAgentsGraph(config=cfg)
+    state, signal = graph.propagate("NVDA", TRADE_DATE)
+    assert signal == state["final_rating"] == "Overweight"
+    for key in ("market_report", "sentiment_report", "news_report", "fundamentals_report",
+                "investment_plan", "trader_investment_plan", "final_trade_decision"):
+        assert state[key].strip(), key
+    assert set(by_title).issubset(calls)
+    assert "get_stock_data" in offline and "get_news" in offline
+    assert [e["rating"] for e in graph.memory_log.load_entries()] == ["Overweight"]
