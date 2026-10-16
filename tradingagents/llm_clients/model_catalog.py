@@ -94,6 +94,11 @@ _MINIMAX_MODELS: dict[str, list[ModelOption]] = {
 
 
 MODEL_OPTIONS: ProviderModeOptions = {
+    "codex_cli": {
+        mode: [("Codex built-in default (ChatGPT subscription)", "codex-default"),
+               ("Custom model ID", "custom")]
+        for mode in ("quick", "deep")
+    },
     "openai": {
         "quick": [
             ("GPT-6 Luna - Fast, high-volume and cost-efficient", "gpt-6-luna"),

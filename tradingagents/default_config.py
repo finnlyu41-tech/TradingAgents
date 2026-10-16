@@ -8,6 +8,9 @@ _TRADINGAGENTS_HOME = os.path.join(os.path.expanduser("~"), ".tradingagents")
 # of the existing default, so users can keep writing plain strings in
 # their .env file.
 _ENV_OVERRIDES = {
+    "TRADINGAGENTS_CODEX_COMMAND": "codex_command",
+    "TRADINGAGENTS_CODEX_TIMEOUT": "codex_timeout",
+    "TRADINGAGENTS_CODEX_REASONING_EFFORT": "codex_reasoning_effort",
     "TRADINGAGENTS_LLM_PROVIDER":         "llm_provider",
     "TRADINGAGENTS_DEEP_THINK_LLM":       "deep_think_llm",
     "TRADINGAGENTS_QUICK_THINK_LLM":      "quick_think_llm",
@@ -88,6 +91,10 @@ def build_default_config() -> dict:
         # the oldest resolved entries are pruned once this limit is exceeded.
         # Pending entries are never pruned. None disables rotation entirely.
         "memory_log_max_entries": None,
+        # Opt-in official Codex CLI subscription backend.
+        "codex_command": "codex",
+        "codex_timeout": 300,
+        "codex_reasoning_effort": "medium",
         # LLM settings
         "llm_provider": "openai",
         "deep_think_llm": "gpt-6-sol",
